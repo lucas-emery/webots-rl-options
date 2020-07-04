@@ -9,7 +9,7 @@ TexturedBackground {
 }
 TexturedBackgroundLight {
 }
-RectangleArena {
+DEF arena RectangleArena {
 }
 DEF supervisor Robot {
   children [

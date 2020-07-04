@@ -37,11 +37,11 @@ class EpuckRobot(RobotEmitterReceiverCSV):
             self.wheel_left.setVelocity(-max_vel)
             self.wheel_right.setVelocity(-max_vel)
         elif action == 2:   # left
-            self.wheel_left.setVelocity(-max_vel)
-            self.wheel_right.setVelocity(max_vel)
+            self.wheel_left.setVelocity(-max_vel/2)
+            self.wheel_right.setVelocity(max_vel/2)
         elif action == 3:   # right
-            self.wheel_left.setVelocity(max_vel)
-            self.wheel_right.setVelocity(-max_vel)
+            self.wheel_left.setVelocity(max_vel/2)
+            self.wheel_right.setVelocity(-max_vel/2)
         else:
             self.wheel_left.setVelocity(0.0)
             self.wheel_right.setVelocity(0.0)

@@ -9,11 +9,13 @@ class EpuckSupervisor(SupervisorCSV):
         self.observation_space = 8  # The agent has 4 inputs
         self.action_space = 4  # The agent can perform 2 actions
 
+        self.arena = self.supervisor.getFromDef('arena')
+
         self.robot = None
-        self.respawn_robot()
+        self.reset_env()
         self.message_received = None    # Variable to save the messages received from the robot
 
-    def respawn_robot(self):
+    def reset_env(self):
         if self.robot is not None:
             # Despawn existing robot
             self.robot.remove()
@@ -32,7 +34,7 @@ class EpuckSupervisor(SupervisorCSV):
         self.message_received = self.handle_receiver()
         if self.message_received is not None:
             for i in range(8):
-                observations.append(normalizeToRange(float(self.message_received[i]), 0, 4095, -1.0, 1.0))
+                observations.append(normalizeToRange(float(self.message_received[i]), 0, 4095, 0, 1.0))
         else:
             # Method is called before self.message_received is initialized
             for i in range(8):
@@ -41,13 +43,15 @@ class EpuckSupervisor(SupervisorCSV):
         return observations
 
     def get_reward(self, action):
-        return 1
+        reward = -0.01
+
+        return reward
 
     def is_done(self):
         return False
 
     def reset(self):
-        self.respawn_robot()
+        self.reset_env()
         self.supervisor.simulationResetPhysics()
         self.message_received = None
         return self.get_observations()
