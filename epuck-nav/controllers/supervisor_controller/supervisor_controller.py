@@ -1,6 +1,8 @@
 import numpy as np
 from deepbots.supervisor.controllers.supervisor_emitter_receiver import SupervisorCSV
 from utilities import normalizeToRange
+from typing import Optional
+from controller import Node
 
 
 class EpuckSupervisor(SupervisorCSV):
@@ -9,9 +11,13 @@ class EpuckSupervisor(SupervisorCSV):
         self.observation_space = 8  # The agent has 4 inputs
         self.action_space = 4  # The agent can perform 2 actions
 
-        self.arena = self.supervisor.getFromDef('arena')
+        self.collision_dist = 0.04  # Epuck radius = 0.037
 
-        self.robot = None
+        self.arena_size = np.array(self.supervisor.getFromDef('arena').getField('floorSize').getSFVec2f())
+        self.tile_size = np.array([0.25, 0.25])
+        self.tiles = np.zeros(np.ceil(self.arena_size / self.tile_size).astype(int), dtype=bool)
+
+        self.robot: Optional[Node] = None
         self.reset_env()
         self.message_received = None    # Variable to save the messages received from the robot
 
@@ -43,7 +49,30 @@ class EpuckSupervisor(SupervisorCSV):
         return observations
 
     def get_reward(self, action):
+        # Punish time
         reward = -0.01
+
+        # Reward exploration
+        position = np.array([self.robot.getPosition()[0], self.robot.getPosition()[2]])
+        relative_pos = position + self.arena_size/2
+        tile = tuple(np.floor(relative_pos / self.tile_size).astype(int))
+
+        if not self.tiles[tile]:
+            reward += 1
+            self.tiles[tile] = True
+
+        # Punish
+        # if np.any(relative_pos < self.collision_dist) or np.any(self.arena_size - relative_pos < self.collision_dist):
+        #     print('collision')
+        #     reward -= 1
+
+        print(self.message_received)
+        if self.message_received is not None:
+            for i in range(8):
+                if float(self.message_received[i]) > 1000:
+                    print('collision')
+                    reward -= 1
+                    break
 
         return reward
 
@@ -52,6 +81,7 @@ class EpuckSupervisor(SupervisorCSV):
 
     def reset(self):
         self.reset_env()
+        self.tiles[:, :] = False
         self.supervisor.simulationResetPhysics()
         self.message_received = None
         return self.get_observations()
@@ -69,13 +99,13 @@ while episode_count < episode_limit:
     episode_reward = 0
 
     for step in range(steps_per_episode):
-        action = np.random.randint(4)  # Agent selects action
-
-        print('Action', action)
+        action = 1# np.random.randint(4)  # Agent selects action
 
         new_observation, reward, done, info = supervisor.step([action])  # Action is the message sent to the robot
 
         episode_reward += reward
+
+        print('Action:', action, 'Episode reward:', episode_reward)
 
         if done:
             break
