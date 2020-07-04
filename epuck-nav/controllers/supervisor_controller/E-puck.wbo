@@ -1,5 +1,5 @@
 #VRML_OBJ R2020a utf8
-Robot {
+DEF EPUCK Robot {
   rotation 0 1 0 1.57
   children [
     HingeJoint {
@@ -1499,10 +1499,8 @@ Robot {
       model "pipe"
     }
     DEF EPUCK_RECEIVER Receiver {
-      channel 1
     }
     DEF EPUCK_EMITTER Emitter {
-      channel 1
     }
     DEF EPUCK_SPEAKER Speaker {
     }
@@ -1553,6 +1551,4 @@ Robot {
   }
   controller "robot_controller"
   cpuConsumption 1.11
-  window "e-puck"
-  remoteControl "e-puck_bluetooth"
 }

@@ -1,32 +1,52 @@
-"""robot_controller controller."""
+from deepbots.robots.controllers.robot_emitter_receiver_csv import RobotEmitterReceiverCSV
 
-# You may need to import some classes of the controller module. Ex:
-#  from controller import Robot, Motor, DistanceSensor
-from controller import Robot
 
-# create the Robot instance.
-robot = Robot()
+class EpuckRobot(RobotEmitterReceiverCSV):
+    def __init__(self):
+        super().__init__(emitter_name='EPUCK_EMMITER',
+                         receiver_name='EPUCK_RECEIVER',
+                         timestep=256)
 
-# get the time step of the current world.
-timestep = int(robot.getBasicTimeStep())
+        self.wheel_left = self.robot.getMotor('left wheel motor')
+        self.wheel_left.setPosition(float('inf'))
+        self.wheel_left.setVelocity(0.0)
+        self.wheel_right = self.robot.getMotor('right wheel motor')
+        self.wheel_right.setPosition(float('inf'))
+        self.wheel_right.setVelocity(0.0)
 
-# You should insert a getDevice-like function in order to get the
-# instance of a device of the robot. Something like:
-#  motor = robot.getMotor('motorname')
-#  ds = robot.getDistanceSensor('dsname')
-#  ds.enable(timestep)
+        self.distance_sensors = []
+        for i in range(8):
+            d_sensor = self.robot.getDistanceSensor('ps{}'.format(i))
+            d_sensor.enable(self.get_timestep())
+            self.distance_sensors.append(d_sensor)
 
-# Main loop:
-# - perform simulation steps until Webots is stopping the controller
-while robot.step(timestep) != -1:
-    # Read the sensors:
-    # Enter here functions to read sensor data, like:
-    #  val = ds.getValue()
+    def create_message(self):
+        message = []
+        for i in range(8):
+            message.append(str(self.distance_sensors[i].getValue()))
+        return message
 
-    # Process sensor data here.
+    def use_message_data(self, message):
+        action = int(message[0])
+        max_vel = self.wheel_left.getMaxVelocity()
 
-    # Enter here functions to send actuator commands, like:
-    #  motor.setPosition(10.0)
-    pass
+        if action == 0:     # forward
+            self.wheel_left.setVelocity(max_vel)
+            self.wheel_right.setVelocity(max_vel)
+        elif action == 1:   # backward
+            self.wheel_left.setVelocity(-max_vel)
+            self.wheel_right.setVelocity(-max_vel)
+        elif action == 2:   # left
+            self.wheel_left.setVelocity(-max_vel)
+            self.wheel_right.setVelocity(max_vel)
+        elif action == 3:   # right
+            self.wheel_left.setVelocity(max_vel)
+            self.wheel_right.setVelocity(-max_vel)
+        else:
+            self.wheel_left.setVelocity(0.0)
+            self.wheel_right.setVelocity(0.0)
 
-# Enter here exit cleanup code.
+
+# Create the robot controller object and run it
+robot_controller = EpuckRobot()
+robot_controller.run()
