@@ -1,0 +1,23 @@
+#VRML_SIM R2020a utf8
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.6769627708252266 0.7103956045814798 0.19250842035595514 0.7285271733211666
+  position 0.9058923249527555 0.8827686636117414 1.4153813631659837
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+}
+DEF supervisor Robot {
+  children [
+    Receiver {
+    }
+    Emitter {
+    }
+  ]
+  controller "supervisor_controller"
+  supervisor TRUE
+}
