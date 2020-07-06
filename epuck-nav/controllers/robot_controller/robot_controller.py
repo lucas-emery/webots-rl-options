@@ -5,7 +5,7 @@ class EpuckRobot(RobotEmitterReceiverCSV):
     def __init__(self):
         super().__init__(emitter_name='EPUCK_EMMITER',
                          receiver_name='EPUCK_RECEIVER',
-                         timestep=256)
+                         timestep=32)
 
         self.wheel_left = self.robot.getMotor('left wheel motor')
         self.wheel_left.setPosition(float('inf'))
@@ -31,11 +31,11 @@ class EpuckRobot(RobotEmitterReceiverCSV):
         max_vel = self.wheel_left.getMaxVelocity()
 
         if action == 0:     # forward
-            self.wheel_left.setVelocity(max_vel)
-            self.wheel_right.setVelocity(max_vel)
+            self.wheel_left.setVelocity(max_vel/2)
+            self.wheel_right.setVelocity(max_vel/2)
         elif action == 1:   # backward
-            self.wheel_left.setVelocity(-max_vel)
-            self.wheel_right.setVelocity(-max_vel)
+            self.wheel_left.setVelocity(-max_vel/2)
+            self.wheel_right.setVelocity(-max_vel/2)
         elif action == 2:   # left
             self.wheel_left.setVelocity(-max_vel/2)
             self.wheel_right.setVelocity(max_vel/2)

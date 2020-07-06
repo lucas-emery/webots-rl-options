@@ -9,7 +9,7 @@ import pickle
 
 class EpuckSupervisor(SupervisorCSV):
     def __init__(self):
-        super().__init__(time_step=256)
+        super().__init__(time_step=32)
         self.observation_space = 8  # The agent has 8 inputs
         self.action_space = 4  # The agent can perform 4 actions
 
@@ -52,7 +52,7 @@ class EpuckSupervisor(SupervisorCSV):
 
     def get_reward(self, action):
         # Punish time
-        reward = -0.1
+        reward = -0.01
 
         # Reward exploration
         position = np.array([self.robot.getPosition()[0], self.robot.getPosition()[2]])
@@ -71,7 +71,7 @@ class EpuckSupervisor(SupervisorCSV):
         if self.message_received is not None:
             for i in range(8):
                 if float(self.message_received[i]) > 1000:
-                    print('collision')
+                    # print('collision')
                     reward -= 1
                     break
 
@@ -111,8 +111,8 @@ supervisor = EpuckSupervisor()
 
 episode_count = 0
 episode_limit = 1000
-steps_per_episode = 200
-resume = False
+steps_per_episode = 1000
+resume = True
 
 if resume:
     with open("data.p", "rb") as f:
@@ -121,10 +121,15 @@ if resume:
         learn_rate = data['learn_rate']
         discount_factor = data['discount_factor']
         history = data['history']
+        epsilon = data['epsilon']
+        epsilon_decay = data['epsilon_decay']
+        print('Agent loaded. Episodes:', len(history))
 else:
     agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3], action_space=4)
     learn_rate = 1e-3
     discount_factor = 0.9
+    epsilon = 1
+    epsilon_decay = 0.99
     history = []
 
 while episode_count < episode_limit:
@@ -135,13 +140,14 @@ while episode_count < episode_limit:
     for step in range(steps_per_episode):
         # print('Obs', observation)
         # print('State', state)
-        action = agent.e_greedy(state, e=0.1)
+        action = agent.e_greedy(state, e=epsilon)
+        # print('Action', action)
 
         new_observation, reward, done, info = supervisor.step([action])  # Action is the message sent to the robot
         new_state = process_observation(new_observation)
         episode_reward += reward
 
-        agent.train(state, new_state, action, reward, learn_rate, discount_factor)
+        # agent.train(state, new_state, action, reward, learn_rate, discount_factor)
 
         # print('Action:', action, 'Episode reward:', episode_reward)
 
@@ -151,14 +157,16 @@ while episode_count < episode_limit:
         observation = new_observation
         state = new_state
 
-    print("Episode #", episode_count, "reward:", episode_reward)
     episode_count += 1
+    print("Episode #", episode_count, "reward:", episode_reward, "epsilon:", epsilon)
     history.append(episode_reward)
+    epsilon *= epsilon_decay
 
     if episode_count % 100 == 0:
         with open("data.p", "wb") as f:
             pickle.dump(
-                {"agent": agent, "history": history, "learn_rate": learn_rate, "discount_factor": discount_factor}, f)
+                {"agent": agent, "history": history, "learn_rate": learn_rate, "discount_factor": discount_factor,
+                 "epsilon": epsilon, "epsilon_decay": epsilon_decay}, f)
 
 
 
