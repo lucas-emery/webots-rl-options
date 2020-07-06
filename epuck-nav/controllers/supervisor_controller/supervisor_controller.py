@@ -3,13 +3,15 @@ from deepbots.supervisor.controllers.supervisor_emitter_receiver import Supervis
 from utilities import normalizeToRange
 from typing import Optional
 from controller import Node
+from tabular_agent import TabularAgent
+import pickle
 
 
 class EpuckSupervisor(SupervisorCSV):
     def __init__(self):
         super().__init__(time_step=256)
-        self.observation_space = 8  # The agent has 4 inputs
-        self.action_space = 4  # The agent can perform 2 actions
+        self.observation_space = 8  # The agent has 8 inputs
+        self.action_space = 4  # The agent can perform 4 actions
 
         self.collision_dist = 0.04  # Epuck radius = 0.037
 
@@ -40,7 +42,7 @@ class EpuckSupervisor(SupervisorCSV):
         self.message_received = self.handle_receiver()
         if self.message_received is not None:
             for i in range(8):
-                observations.append(normalizeToRange(float(self.message_received[i]), 0, 4095, 0, 1.0))
+                observations.append(float(self.message_received[i]))
         else:
             # Method is called before self.message_received is initialized
             for i in range(8):
@@ -50,7 +52,7 @@ class EpuckSupervisor(SupervisorCSV):
 
     def get_reward(self, action):
         # Punish time
-        reward = -0.01
+        reward = -0.1
 
         # Reward exploration
         position = np.array([self.robot.getPosition()[0], self.robot.getPosition()[2]])
@@ -66,7 +68,6 @@ class EpuckSupervisor(SupervisorCSV):
         #     print('collision')
         #     reward -= 1
 
-        print(self.message_received)
         if self.message_received is not None:
             for i in range(8):
                 if float(self.message_received[i]) > 1000:
@@ -90,28 +91,74 @@ class EpuckSupervisor(SupervisorCSV):
         return None
 
 
+def process_observation(observation):
+    min = 100
+    max = 1000
+    state = []
+
+    for i in range(8):
+        value = observation[i]
+        if value < min:
+            state.append(0)
+        elif value < max:
+            state.append(1)
+        else:
+            state.append(2)
+
+    return state
+
 supervisor = EpuckSupervisor()
+
 episode_count = 0
-episode_limit = 100
+episode_limit = 1000
 steps_per_episode = 200
+resume = False
+
+if resume:
+    with open("data.p", "rb") as f:
+        data = pickle.load(f)
+        agent = data['agent']
+        learn_rate = data['learn_rate']
+        discount_factor = data['discount_factor']
+        history = data['history']
+else:
+    agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3], action_space=4)
+    learn_rate = 1e-3
+    discount_factor = 0.9
+    history = []
+
 while episode_count < episode_limit:
-    observation = supervisor.reset()
     episode_reward = 0
+    observation = supervisor.reset()
+    state = process_observation(observation)
 
     for step in range(steps_per_episode):
-        action = 1# np.random.randint(4)  # Agent selects action
+        # print('Obs', observation)
+        # print('State', state)
+        action = agent.e_greedy(state, e=0.1)
 
         new_observation, reward, done, info = supervisor.step([action])  # Action is the message sent to the robot
-
+        new_state = process_observation(new_observation)
         episode_reward += reward
 
-        print('Action:', action, 'Episode reward:', episode_reward)
+        agent.train(state, new_state, action, reward, learn_rate, discount_factor)
+
+        # print('Action:', action, 'Episode reward:', episode_reward)
 
         if done:
             break
 
         observation = new_observation
+        state = new_state
 
     print("Episode #", episode_count, "reward:", episode_reward)
     episode_count += 1
+    history.append(episode_reward)
+
+    if episode_count % 100 == 0:
+        with open("data.p", "wb") as f:
+            pickle.dump(
+                {"agent": agent, "history": history, "learn_rate": learn_rate, "discount_factor": discount_factor}, f)
+
+
 
