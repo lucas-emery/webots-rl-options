@@ -60,7 +60,7 @@ class EpuckSupervisor(SupervisorCSV):
         tile = tuple(np.floor(relative_pos / self.tile_size).astype(int))
 
         if not self.tiles[tile]:
-            reward += 1
+            reward += 10
             self.tiles[tile] = True
 
         # Punish
@@ -91,7 +91,7 @@ class EpuckSupervisor(SupervisorCSV):
         return None
 
 
-def process_observation(observation):
+def build_state(observation, action):
     min = 100
     max = 1000
     state = []
@@ -105,6 +105,8 @@ def process_observation(observation):
         else:
             state.append(2)
 
+    state.append(action)    # Last action
+
     return state
 
 supervisor = EpuckSupervisor()
@@ -112,7 +114,7 @@ supervisor = EpuckSupervisor()
 episode_count = 0
 episode_limit = 1000
 steps_per_episode = 1000
-resume = True
+resume = False
 
 if resume:
     with open("data.p", "rb") as f:
@@ -125,7 +127,7 @@ if resume:
         epsilon_decay = data['epsilon_decay']
         print('Agent loaded. Episodes:', len(history))
 else:
-    agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3], action_space=4)
+    agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3, 4], action_space=4)
     learn_rate = 1e-3
     discount_factor = 0.9
     epsilon = 1
@@ -135,19 +137,24 @@ else:
 while episode_count < episode_limit:
     episode_reward = 0
     observation = supervisor.reset()
-    state = process_observation(observation)
+    state = build_state(observation, np.random.randint(4))
 
     for step in range(steps_per_episode):
         # print('Obs', observation)
         # print('State', state)
         action = agent.e_greedy(state, e=epsilon)
+        # action = agent.greedy(state)
         # print('Action', action)
 
-        new_observation, reward, done, info = supervisor.step([action])  # Action is the message sent to the robot
-        new_state = process_observation(new_observation)
-        episode_reward += reward
+        action_reward = 0
+        for _ in range(4):
+            new_observation, reward, done, info = supervisor.step([action])  # Action is the message sent to the robot
+            action_reward += reward
 
-        # agent.train(state, new_state, action, reward, learn_rate, discount_factor)
+        episode_reward += action_reward
+        new_state = build_state(new_observation, action)
+
+        agent.train(state, new_state, action, action_reward, learn_rate, discount_factor)
 
         # print('Action:', action, 'Episode reward:', episode_reward)
 
