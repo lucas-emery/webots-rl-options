@@ -1,0 +1,22 @@
+#VRML_OBJ R2020a utf8
+DEF Cylinder2 Solid {
+  translation 0 0.05 0
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0 0
+        metalness 0
+      }
+      geometry Cylinder {
+        height 0.1
+        radius 0.05
+      }
+    }
+  ]
+  boundingObject DEF Cylinder2BoundingObject Cylinder {
+    height 0.1
+    radius 0.05
+  }
+  physics Physics {
+  }
+}

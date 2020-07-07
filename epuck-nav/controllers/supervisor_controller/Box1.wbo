@@ -1,0 +1,21 @@
+#VRML_OBJ R2020a utf8
+DEF Box1 Solid {
+  translation 0 0.05 0
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0 0
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 0.1 0.1
+      }
+    }
+  ]
+  name "solid(2)"
+  boundingObject Box {
+    size 0.1 0.1 0.1
+  }
+  physics Physics {
+  }
+}
