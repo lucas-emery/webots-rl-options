@@ -21,6 +21,7 @@ class EnvDefs:
     ]
     boxes = [
         # node DEF,  node file definition, side length
+        ('Box1', 'Box1.wbo', 0.1)
     ]
 
 
@@ -68,7 +69,9 @@ class EpuckSupervisor(SupervisorCSV):
             environment_objects.append(wrapped_object)
 
         for node_def, node_file, side_length in EnvDefs.boxes:
-            pass
+            wrapped_object = Cube(node_def, node_file, side_length=side_length)
+            self.place_object_in_random_position(environment_objects, wrapped_object, children_field)
+            environment_objects.append(wrapped_object)
 
         return environment_objects
 
