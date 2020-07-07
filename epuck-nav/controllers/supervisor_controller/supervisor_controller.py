@@ -35,14 +35,16 @@ class EpuckSupervisor(SupervisorCSV):
         self.collision_dist = 0.04  # Epuck radius = 0.037
 
         self.arena_size = np.array(self.supervisor.getFromDef('arena').getField('floorSize').getSFVec2f())
-        self.tile_size = np.array([0.25, 0.25])
-        self.tiles = np.zeros(np.ceil(self.arena_size / self.tile_size).astype(int), dtype=bool)
+        self.tile_size = np.array([0.1, 0.1])
+        self.reward_tiles = np.ndarray(np.ceil(self.arena_size / self.tile_size).astype(int), dtype=bool)
 
         self.robot: Optional[Node] = None
         self.environment_objects = []
         self.message_received = None    # Variable to save the messages received from the robot
 
     def reset_env(self):
+        self.reward_tiles = np.random.uniform(size=self.reward_tiles.shape) < 0.2
+
         if self.robot is not None:
             # Despawn existing robot
             self.robot.remove()
@@ -139,9 +141,9 @@ class EpuckSupervisor(SupervisorCSV):
         relative_pos = position + self.arena_size/2
         tile = tuple(np.floor(relative_pos / self.tile_size).astype(int))
 
-        if not self.tiles[tile]:
+        if self.reward_tiles[tile]:
             reward += 10
-            self.tiles[tile] = True
+            self.reward_tiles[tile] = False
 
         # Punish
         # if np.any(relative_pos < self.collision_dist) or np.any(self.arena_size - relative_pos < self.collision_dist):
@@ -158,11 +160,10 @@ class EpuckSupervisor(SupervisorCSV):
         return reward
 
     def is_done(self):
-        return False
+        return not np.any(self.reward_tiles)
 
     def reset(self):
         self.reset_env()
-        self.tiles[:, :] = False
         self.supervisor.simulationResetPhysics()
         self.message_received = None
         return self.get_observations()
@@ -193,25 +194,18 @@ supervisor = EpuckSupervisor()
 
 episode_count = 0
 episode_limit = 1000
-steps_per_episode = 1000
+steps_per_episode = 500
 resume = False
 
 if resume:
     with open("data.p", "rb") as f:
         data = pickle.load(f)
         agent = data['agent']
-        learn_rate = data['learn_rate']
-        discount_factor = data['discount_factor']
         history = data['history']
-        epsilon = data['epsilon']
-        epsilon_decay = data['epsilon_decay']
-        print('Agent loaded. Episodes:', len(history))
+        version = data['version']
+        print('Agent loaded. Version:', version, 'Episodes:', len(history))
 else:
-    agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3, 4], action_space=4)
-    learn_rate = 1e-3
-    discount_factor = 0.9
-    epsilon = 1
-    epsilon_decay = 0.99
+    agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3, 4], action_space=4, lr=1e-3, gamma=0.9, e=1, e_decay=0.99)
     history = []
 
 while episode_count < episode_limit:
@@ -222,8 +216,7 @@ while episode_count < episode_limit:
     for step in range(steps_per_episode):
         # print('Obs', observation)
         # print('State', state)
-        action = agent.e_greedy(state, e=epsilon)
-        # action = agent.greedy(state)
+        action, a_prob = agent.act(state)
         # print('Action', action)
 
         action_reward = 0
@@ -234,26 +227,27 @@ while episode_count < episode_limit:
         episode_reward += action_reward
         new_state = build_state(new_observation, action)
 
-        agent.train(state, new_state, action, action_reward, learn_rate, discount_factor)
+        agent.store_transition(state, new_state, action, a_prob, action_reward)
 
         # print('Action:', action, 'Episode reward:', episode_reward)
 
         if done:
+            print('Task done.')
             break
 
         observation = new_observation
         state = new_state
 
     episode_count += 1
-    print("Episode #", episode_count, "reward:", episode_reward, "epsilon:", epsilon)
+
+    agent.train()
+
+    print("Episode #", episode_count, "reward:", episode_reward)
     history.append(episode_reward)
-    epsilon *= epsilon_decay
 
     if episode_count % 100 == 0:
         with open("data.p", "wb") as f:
-            pickle.dump(
-                {"agent": agent, "history": history, "learn_rate": learn_rate, "discount_factor": discount_factor,
-                 "epsilon": epsilon, "epsilon_decay": epsilon_decay}, f)
+            pickle.dump({"agent": agent, "history": history, "version": '2.0'}, f)
 
 
 
