@@ -104,13 +104,14 @@ class EpuckSupervisor(SupervisorCSV):
         while not valid_position_found:
             position_x = random.uniform(-floor_x + min_distance_from_wall, floor_x - min_distance_from_wall)
             position_z = random.uniform(-floor_z + min_distance_from_wall, floor_z - min_distance_from_wall)
+
+            valid_position_found = True
             for placed_object in placed_objects:
                 if placed_object.is_inside_object(position_x, position_z):
+                    valid_position_found = False
                     continue
-            valid_position_found = True
 
         return position_x, position_z
-
 
     def get_observations(self):
         observations = []
