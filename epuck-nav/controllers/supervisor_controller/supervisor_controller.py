@@ -2,26 +2,25 @@ import random
 
 import numpy as np
 from deepbots.supervisor.controllers.supervisor_emitter_receiver import SupervisorCSV
-from utilities import normalizeToRange
 from typing import Optional
 from controller import Node
-from tabular_agent import TabularAgent
+from agents.tabular_agent import TabularAgent
 import pickle
-from env_objects import Cylinder, Cube
+from utils.env_objects import Cylinder, Cube
 
 
 class EnvDefs:
 
-    epuck = ('EPUCK', 'E-puck.wbo')
+    epuck = ('EPUCK', 'webots_objects/E-puck.wbo')
 
     cylinders = [
         # node DEF,  node file definition, radius
-        ('Cylinder1', 'Cylinder1.wbo', 0.05),
-        ('Cylinder2', 'Cylinder2.wbo', 0.05)
+        ('Cylinder1', 'webots_objects/Cylinder1.wbo', 0.05),
+        ('Cylinder2', 'webots_objects/Cylinder2.wbo', 0.05)
     ]
     boxes = [
         # node DEF,  node file definition, side length
-        ('Box1', 'Box1.wbo', 0.1)
+        ('Box1', 'webots_objects/Box1.wbo', 0.1)
     ]
 
 
@@ -198,7 +197,7 @@ steps_per_episode = 500
 resume = False
 
 if resume:
-    with open("data.p", "rb") as f:
+    with open("pickles/data.p", "rb") as f:
         data = pickle.load(f)
         agent = data['agent']
         history = data['history']
@@ -246,7 +245,7 @@ while episode_count < episode_limit:
     history.append(episode_reward)
 
     if episode_count % 100 == 0:
-        with open("data.p", "wb") as f:
+        with open("pickles/data.p", "wb") as f:
             pickle.dump({"agent": agent, "history": history, "version": '2.0'}, f)
 
 
