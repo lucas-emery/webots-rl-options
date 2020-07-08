@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 from deepbots.supervisor.controllers.supervisor_emitter_receiver import SupervisorCSV
 from typing import Optional
@@ -10,9 +8,7 @@ from utils.env_objects import Cylinder, Cube
 
 
 class EnvDefs:
-
     epuck = ('EPUCK', 'webots_objects/E-puck.wbo')
-
     cylinders = [
         # node DEF,  node file definition, radius
         ('Cylinder1', 'webots_objects/Cylinder1.wbo', 0.05),
@@ -106,8 +102,8 @@ class EpuckSupervisor(SupervisorCSV):
         position_x = None
         position_z = None
         while not valid_position_found:
-            position_x = random.uniform(-floor_x + min_distance_from_wall, floor_x - min_distance_from_wall)
-            position_z = random.uniform(-floor_z + min_distance_from_wall, floor_z - min_distance_from_wall)
+            position_x = np.random.uniform(-floor_x + min_distance_from_wall, floor_x - min_distance_from_wall)
+            position_z = np.random.uniform(-floor_z + min_distance_from_wall, floor_z - min_distance_from_wall)
 
             valid_position_found = True
             for placed_object in placed_objects:

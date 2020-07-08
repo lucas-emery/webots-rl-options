@@ -1,5 +1,6 @@
 #VRML_OBJ R2020a utf8
 DEF EPUCK Robot {
+  translation 0 0 0
   rotation 0 1 0 1.57
   children [
     HingeJoint {
