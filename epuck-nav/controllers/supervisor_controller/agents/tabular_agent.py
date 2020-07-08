@@ -40,6 +40,7 @@ class TabularAgent:
             self.q_function[index] = old_q + self.lr * (self.rewards[i] + self.gamma * max_q - old_q)
 
         self.e *= self.e_decay
+        self._clear_buffers()
 
     def _e_greedy(self, state: list):
         if np.random.uniform() < self.e:
