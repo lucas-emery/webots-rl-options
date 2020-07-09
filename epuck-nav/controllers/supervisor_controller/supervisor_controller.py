@@ -99,6 +99,7 @@ class EpuckSupervisor(SupervisorCSV):
 
         trans_field = shape.getField('translation')
         initial_position = [x, 0.05, z]
+        wrapped_object.initial_position = initial_position
         trans_field.setSFVec3f(initial_position)
         shape.resetPhysics()
 
