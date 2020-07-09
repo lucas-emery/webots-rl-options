@@ -1,3 +1,6 @@
+import os
+import random
+
 import numpy as np
 from deepbots.supervisor.controllers.supervisor_emitter_receiver import SupervisorCSV
 from typing import Optional
@@ -37,6 +40,9 @@ class EpuckSupervisor(SupervisorCSV):
         self.environment_objects = []
         self.message_received = None    # Variable to save the messages received from the robot
 
+        # initialization helper variables
+        self.robot_initial_position = []
+
     def reset_env(self):
         self.reward_tiles = np.random.uniform(size=self.reward_tiles.shape) < 0.2
 
@@ -54,6 +60,9 @@ class EpuckSupervisor(SupervisorCSV):
         epuck_def, epuck_file = EnvDefs.epuck
         children_field.importMFNode(-2, epuck_file)    # Load robot from file and add to second-to-last position
         self.robot = self.supervisor.getFromDef(epuck_def)
+
+        #insert robot in random position
+        self.insert_robot_in_random_position()
 
         self.environment_objects = self.populate_environment_objects(children_field)
 
@@ -89,21 +98,24 @@ class EpuckSupervisor(SupervisorCSV):
         x, z = self.generate_random_valid_position(placed_objects, wrapped_object)
 
         trans_field = shape.getField('translation')
-        trans_field.setSFVec3f([x, 0.05, z])
+        initial_position = [x, 0.05, z]
+        wrapped_object.initial_position = initial_position
+        trans_field.setSFVec3f(initial_position)
         shape.resetPhysics()
 
         return wrapped_object
 
     def generate_random_valid_position(self, placed_objects, wrapped_object):
-        floor_x = 1/2
-        floor_z = 1/2
+
         valid_position_found = False
         min_distance_from_wall = wrapped_object.get_min_distance_from_wall()
         position_x = None
         position_z = None
         while not valid_position_found:
-            position_x = np.random.uniform(-floor_x + min_distance_from_wall, floor_x - min_distance_from_wall)
-            position_z = np.random.uniform(-floor_z + min_distance_from_wall, floor_z - min_distance_from_wall)
+            position_x, position_z = self.get_random_coords_in_arena(min_distance_from_wall)
+
+            if self.intersects_with_robot(position_x, position_z):
+                continue
 
             valid_position_found = True
             for placed_object in placed_objects:
@@ -112,6 +124,24 @@ class EpuckSupervisor(SupervisorCSV):
                     continue
 
         return position_x, position_z
+
+    @staticmethod
+    def get_random_coords_in_arena(min_distance_from_wall):
+        floor_x = 1 / 2
+        floor_z = 1 / 2
+        position_x = random.uniform(-floor_x + min_distance_from_wall, floor_x - min_distance_from_wall)
+        position_z = random.uniform(-floor_z + min_distance_from_wall, floor_z - min_distance_from_wall)
+        return position_x, position_z
+
+    def intersects_with_robot(self, position_x, position_z):
+        position_vec = self.robot_initial_position
+        return np.sqrt(((position_vec[0] - position_x) ** 2) + ((position_vec[2] - position_z) ** 2)) < 0.1
+
+    def insert_robot_in_random_position(self):
+        trans_field = self.robot.getField('translation')
+        x, z = self.get_random_coords_in_arena(0.045)
+        self.robot_initial_position = [x, 0.01, z]
+        trans_field.setSFVec3f(self.robot_initial_position)
 
     def get_observations(self):
         observations = []
@@ -191,6 +221,9 @@ episode_count = 0
 episode_limit = 1000
 steps_per_episode = 500
 resume = False
+
+if not os.path.exists('pickles'):
+    os.makedirs('pickles')
 
 if resume:
     with open("pickles/data.p", "rb") as f:
