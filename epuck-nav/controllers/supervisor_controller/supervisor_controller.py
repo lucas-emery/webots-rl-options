@@ -28,7 +28,7 @@ class EpuckSupervisor(SupervisorCSV):
     def __init__(self):
         super().__init__(time_step=32)
         self.observation_space = 8  # The agent has 8 inputs
-        self.action_space = 4  # The agent can perform 4 actions
+        self.action_space = 3  # The agent can perform 4 actions
 
         self.collision_dist = 0.04  # Epuck radius = 0.037
 
@@ -242,10 +242,7 @@ while episode_count < episode_limit:
     state = build_state(observation, np.random.randint(4))
 
     for step in range(steps_per_episode):
-        # print('Obs', observation)
-        # print('State', state)
         action, a_prob = agent.act(state)
-        # print('Action', action)
 
         action_reward = 0
         for _ in range(4):
