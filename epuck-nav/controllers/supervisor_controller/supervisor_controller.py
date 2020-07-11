@@ -187,5 +187,4 @@ while episode_count < episode_limit:
         with open("pickles/data.p", "wb") as f:
             pickle.dump({"agent": agent, "history": history, "version": '2.0'}, f)
 
-
-
+setup_logging()
