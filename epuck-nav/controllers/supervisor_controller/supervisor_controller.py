@@ -68,7 +68,7 @@ class EpuckSupervisor(SupervisorCSV):
         #     print('collision')
         #     reward -= 1
 
-        if action == 0:
+        if action[0] == 0:
             reward += 0.5
 
         if self.message_received is not None:
@@ -137,8 +137,8 @@ if resume:
         version = data['version']
         print('Agent loaded. Version:', version, 'Episodes:', len(history))
 else:
-    agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3], action_space=supervisor.action_space,
-                         lr=1e-3, gamma=0.9, e=1, e_decay=0.99)
+    agent = TabularAgentMC(state_space=[3, 3, 3, 3, 3, 3, 3, 3], action_space=supervisor.action_space,
+                           lr=1e-2, gamma=0.9, e=1, e_decay=0.99)
     history = []
 
 build_state = build_discrete_state
@@ -149,7 +149,8 @@ while episode_count < episode_limit:
     state = build_state(observation)
 
     for step in range(steps_per_episode):
-        action, a_prob = agent.act(state)
+        action, a_prob = agent.act(state, policy='softmax')
+        # print('State', state, 'Action', action, 'Prob', a_prob)
 
         action_reward = 0
         for _ in range(4):
@@ -180,5 +181,3 @@ while episode_count < episode_limit:
     if episode_count % 100 == 0:
         with open("pickles/data.p", "wb") as f:
             pickle.dump({"agent": agent, "history": history, "version": '2.0'}, f)
-
-setup_logging()

@@ -40,8 +40,7 @@ class EpuckRobot(RobotEmitterReceiverCSV):
             self.wheel_left.setVelocity(max_vel/2)
             self.wheel_right.setVelocity(-max_vel/2)
         else:
-            self.wheel_left.setVelocity(0.0)
-            self.wheel_right.setVelocity(0.0)
+            raise Exception("Fran se la come")
 
 
 # Create the robot controller object and run it
