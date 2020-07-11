@@ -5,7 +5,7 @@ import numpy as np
 from deepbots.supervisor.controllers.supervisor_emitter_receiver import SupervisorCSV
 from typing import Optional
 from controller import Node
-from agents.tabular_agent import TabularAgent
+from agents.tabular_agent import TabularAgent, TabularAgentMC
 import pickle
 
 from environment import SimpleArena
@@ -13,7 +13,6 @@ from utils.env_objects import Cylinder, Cube
 
 
 class EpuckSupervisor(SupervisorCSV):
-
     def __init__(self):
         super().__init__(time_step=32)
         self.observation_space = 8  # The agent has 8 inputs
@@ -99,7 +98,7 @@ class EpuckSupervisor(SupervisorCSV):
         return None
 
 
-def build_state(observation, action):
+def build_state(observation):
     min = 100
     max = 1000
     state = []
@@ -113,9 +112,8 @@ def build_state(observation, action):
         else:
             state.append(2)
 
-    state.append(action)    # Last action
-
     return state
+
 
 supervisor = EpuckSupervisor()
 
@@ -135,13 +133,14 @@ if resume:
         version = data['version']
         print('Agent loaded. Version:', version, 'Episodes:', len(history))
 else:
-    agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3, 4], action_space=4, lr=1e-3, gamma=0.9, e=1, e_decay=0.99)
+    agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3], action_space=supervisor.action_space,
+                         lr=1e-3, gamma=0.9, e=1, e_decay=0.99)
     history = []
 
 while episode_count < episode_limit:
     episode_reward = 0
     observation = supervisor.reset()
-    state = build_state(observation, np.random.randint(4))
+    state = build_state(observation)
 
     for step in range(steps_per_episode):
         action, a_prob = agent.act(state)
@@ -152,7 +151,7 @@ while episode_count < episode_limit:
             action_reward += reward
 
         episode_reward += action_reward
-        new_state = build_state(new_observation, action)
+        new_state = build_state(new_observation)
 
         agent.store_transition(state, new_state, action, a_prob, action_reward)
 

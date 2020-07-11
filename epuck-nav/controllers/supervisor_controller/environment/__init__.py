@@ -1,8 +1,6 @@
-import random
-
-from pandas import np
-
+import numpy as np
 from utils.env_objects import Cylinder, Cube
+
 
 class EnvDefs:
     epuck = ('EPUCK', 'webots_objects/E-puck.wbo')
@@ -104,8 +102,8 @@ class SimpleArena:
     def _get_random_coords_in_arena(min_distance_from_wall):
         floor_x = 1 / 2
         floor_z = 1 / 2
-        position_x = random.uniform(-floor_x + min_distance_from_wall, floor_x - min_distance_from_wall)
-        position_z = random.uniform(-floor_z + min_distance_from_wall, floor_z - min_distance_from_wall)
+        position_x = np.random.uniform(-floor_x + min_distance_from_wall, floor_x - min_distance_from_wall)
+        position_z = np.random.uniform(-floor_z + min_distance_from_wall, floor_z - min_distance_from_wall)
         return position_x, position_z
 
     def _intersects_with_robot(self, position_x, position_z):
