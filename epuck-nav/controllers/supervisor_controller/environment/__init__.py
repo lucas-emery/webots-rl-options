@@ -92,7 +92,7 @@ class SimpleArena:
 
             valid_position_found = True
             for placed_object in placed_objects:
-                if placed_object.is_inside_object(position_x, position_z):
+                if placed_object.is_inside_object(position_x, position_z, wrapped_object.get_min_distance_from_wall()):
                     valid_position_found = False
                     continue
 
