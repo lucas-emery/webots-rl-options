@@ -22,15 +22,12 @@ class EpuckSupervisor(SupervisorCSV):
         self.collision_dist = 0.04  # Epuck radius = 0.037
 
         self.arena_size = np.array(self.supervisor.getFromDef('arena').getField('floorSize').getSFVec2f())
-        self.tile_size = np.array([0.1, 0.1])
-        self.reward_tiles = np.ndarray(np.ceil(self.arena_size / self.tile_size).astype(int), dtype=bool)
 
         self.robot: Optional[Node] = None
         self.environment_objects = []
         self.message_received = None    # Variable to save the messages received from the robot
 
     def reset_env(self):
-        self.reward_tiles = np.random.uniform(size=self.reward_tiles.shape) < 0.2
 
         if self.robot is not None:
             # Despawn existing robot
@@ -60,22 +57,19 @@ class EpuckSupervisor(SupervisorCSV):
         return observations
 
     def get_reward(self, action):
-        # Punish time
-        reward = -0.01
+        reward = 0
 
         # Reward exploration
         position = np.array([self.robot.getPosition()[0], self.robot.getPosition()[2]])
         relative_pos = position + self.arena_size/2
-        tile = tuple(np.floor(relative_pos / self.tile_size).astype(int))
-
-        if self.reward_tiles[tile]:
-            reward += 10
-            self.reward_tiles[tile] = False
 
         # Punish
         # if np.any(relative_pos < self.collision_dist) or np.any(self.arena_size - relative_pos < self.collision_dist):
         #     print('collision')
         #     reward -= 1
+
+        if action == 0:
+            reward += 0.5
 
         if self.message_received is not None:
             for i in range(8):
@@ -87,7 +81,7 @@ class EpuckSupervisor(SupervisorCSV):
         return reward
 
     def is_done(self):
-        return not np.any(self.reward_tiles)
+        return False
 
     def reset(self):
         self.reset_env()
