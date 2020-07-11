@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def normalizeToRange(value, minVal, maxVal, newMin, newMax, clip=False):
+def normalize_to_range(value, minVal, maxVal, newMin, newMax, clip=False):
     """
     Normalize value to a specified new range by supplying the current range.
 

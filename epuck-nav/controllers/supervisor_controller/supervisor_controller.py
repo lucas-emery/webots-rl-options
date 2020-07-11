@@ -7,6 +7,7 @@ from typing import Optional
 from controller import Node
 from agents.tabular_agent import TabularAgent, TabularAgentMC
 import pickle
+from utils.utilities import normalize_to_range
 
 from environment import SimpleArena
 from utils.env_objects import Cylinder, Cube
@@ -98,7 +99,7 @@ class EpuckSupervisor(SupervisorCSV):
         return None
 
 
-def build_state(observation):
+def build_discrete_state(observation):
     min = 100
     max = 1000
     state = []
@@ -111,6 +112,15 @@ def build_state(observation):
             state.append(1)
         else:
             state.append(2)
+
+    return state
+
+
+def build_continuous_state(observation):
+    state = []
+
+    for i in range(8):
+        state.append(normalize_to_range(observation[i], 0, 2047, 0, 1, clip=True))
 
     return state
 
@@ -136,6 +146,8 @@ else:
     agent = TabularAgent(state_space=[3, 3, 3, 3, 3, 3, 3, 3], action_space=supervisor.action_space,
                          lr=1e-3, gamma=0.9, e=1, e_decay=0.99)
     history = []
+
+build_state = build_discrete_state
 
 while episode_count < episode_limit:
     episode_reward = 0
