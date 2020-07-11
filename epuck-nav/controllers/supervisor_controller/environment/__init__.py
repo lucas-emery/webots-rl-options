@@ -11,7 +11,8 @@ class EnvDefs:
     ]
     boxes = [
         # node DEF,  node file definition, side length
-        ('Box1', 'webots_objects/Box1.wbo', 0.1)
+        ('Box1', 'webots_objects/Box1.wbo', 0.1),
+        ('Box2', 'webots_objects/Box2.wbo', 0.1)
     ]
 
 

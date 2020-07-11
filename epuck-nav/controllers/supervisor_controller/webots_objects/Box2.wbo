@@ -1,6 +1,6 @@
 #VRML_OBJ R2020a utf8
-DEF Box1 Solid {
-  translation 3 0.05 5
+DEF Box2 Solid {
+  translation 4 0.05 5
   children [
     Shape {
       appearance PBRAppearance {
