@@ -1,11 +1,13 @@
 import os
 import random
 
+import math
 import numpy as np
 from deepbots.supervisor.controllers.supervisor_emitter_receiver import SupervisorCSV
 from typing import Optional
 from controller import Node
 from agents.tabular_agent import TabularAgent, TabularAgentMC
+from agents.nn_agent import SimpleNNAgent
 import pickle
 from utils.utilities import normalize_to_range
 
@@ -57,26 +59,17 @@ class EpuckSupervisor(SupervisorCSV):
         return observations
 
     def get_reward(self, action):
-        reward = 0
-
-        # Reward exploration
-        position = np.array([self.robot.getPosition()[0], self.robot.getPosition()[2]])
-        relative_pos = position + self.arena_size/2
-
-        # Punish
-        # if np.any(relative_pos < self.collision_dist) or np.any(self.arena_size - relative_pos < self.collision_dist):
-        #     print('collision')
-        #     reward -= 1
+        reward = 0.0
 
         if action[0] == 0:
-            reward += 0.5
+            reward += 1
 
+        # Punish collision
         if self.message_received is not None:
             for i in range(8):
                 if float(self.message_received[i]) > 1000:
                     # print('collision')
-                    reward -= 1
-                    break
+                    return -10
 
         return reward
 
@@ -114,7 +107,8 @@ def build_continuous_state(observation):
     state = []
 
     for i in range(8):
-        state.append(normalize_to_range(observation[i], 0, 2047, 0, 1, clip=True))
+        value = observation[i] if observation[i] > 70 else 70
+        state.append(math.log(value - 40) / 3.5 - 0.97)
 
     return state
 
@@ -137,11 +131,11 @@ if resume:
         version = data['version']
         print('Agent loaded. Version:', version, 'Episodes:', len(history))
 else:
-    agent = TabularAgentMC(state_space=[3, 3, 3, 3, 3, 3, 3, 3], action_space=supervisor.action_space,
-                           lr=1e-2, gamma=0.9, e=1, e_decay=0.99)
+    agent = SimpleNNAgent(state_space=supervisor.observation_space, action_space=supervisor.action_space,
+                          lr=1e-3, gamma=0.9, hidden=50)
     history = []
 
-build_state = build_discrete_state
+build_state = build_continuous_state
 
 while episode_count < episode_limit:
     episode_reward = 0
@@ -149,11 +143,13 @@ while episode_count < episode_limit:
     state = build_state(observation)
 
     for step in range(steps_per_episode):
-        action, a_prob = agent.act(state, policy='softmax')
-        # print('State', state, 'Action', action, 'Prob', a_prob)
+        action, a_prob = agent.act(state)
+        #print(observation)
+        #print(state)
+        #print('Action', action, 'Prob', a_prob)
 
         action_reward = 0
-        for _ in range(4):
+        for _ in range(3):
             new_observation, reward, done, info = supervisor.step([action])  # Action is the message sent to the robot
             action_reward += reward
 
