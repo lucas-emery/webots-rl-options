@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
+from torch.utils.data import SubsetRandomSampler, BatchSampler
 import numpy as np
 
 
@@ -32,7 +33,7 @@ class SimpleNNAgent(Agent):
         action = dist.sample()
         return action.item(), probs[:, action.item()].item()
 
-    def train(self, batch_size=1):
+    def train(self, batch_size=8):
         # REINFORCE algorithm
         # Unroll rewards
         rewards = np.array(self.rewards)
@@ -51,12 +52,10 @@ class SimpleNNAgent(Agent):
         actions = torch.tensor(self.actions, dtype=torch.long).view(-1, 1)
         rewards = torch.tensor(rewards, dtype=torch.float).view(-1, 1)
 
-        for i in range(len(self.states)):   # TODO: Support batch_size
-            # Hotfix pre batch support
-            i = [i]
+        for batch in BatchSampler(SubsetRandomSampler(range(len(self.states))), batch_size, drop_last=False):
             # Calculate loss
-            probs = self.net(states[i]).gather(1, actions[i])
-            loss = -(torch.log(probs) * rewards[i]).mean()  # Mean is here for when batch_size > 1
+            probs = self.net(states[batch]).gather(1, actions[batch])
+            loss = -(torch.log(probs) * rewards[batch]).mean()  # Mean is here for when batch_size > 1
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

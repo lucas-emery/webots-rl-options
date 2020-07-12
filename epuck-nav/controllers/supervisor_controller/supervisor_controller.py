@@ -132,7 +132,7 @@ if resume:
         print('Agent loaded. Version:', version, 'Episodes:', len(history))
 else:
     agent = SimpleNNAgent(state_space=supervisor.observation_space, action_space=supervisor.action_space,
-                          lr=1e-3, gamma=0.9, hidden=50)
+                          lr=1e-2, gamma=0.9, hidden=50)
     history = []
 
 build_state = build_continuous_state
