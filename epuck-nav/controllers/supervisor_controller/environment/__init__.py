@@ -1,18 +1,19 @@
 import numpy as np
 from utils.env_objects import Cylinder, Cube
+import os
 
 
 class EnvDefs:
-    epuck = ('EPUCK', 'webots_objects/E-puck.wbo')
+    epuck = ('EPUCK', os.path.abspath('webots_objects/E-puck.wbo'))
     cylinders = [
         # node DEF,  node file definition, radius
-        ('Cylinder1', 'webots_objects/Cylinder1.wbo', 0.05),
-        ('Cylinder2', 'webots_objects/Cylinder2.wbo', 0.05)
+        ('Cylinder1', os.path.abspath('webots_objects/Cylinder1.wbo'), 0.05),
+        ('Cylinder2', os.path.abspath('webots_objects/Cylinder2.wbo'), 0.05)
     ]
     boxes = [
         # node DEF,  node file definition, side length
-        ('Box1', 'webots_objects/Box1.wbo', 0.1),
-        ('Box2', 'webots_objects/Box2.wbo', 0.1)
+        ('Box1', os.path.abspath('webots_objects/Box1.wbo'), 0.1),
+        ('Box2', os.path.abspath('webots_objects/Box2.wbo'), 0.1)
     ]
 
 

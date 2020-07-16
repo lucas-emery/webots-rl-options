@@ -8,6 +8,7 @@ from typing import Optional
 from controller import Node
 from agents.tabular_agent import TabularAgent, TabularAgentMC
 from agents.nn_agent import SimpleNNAgent
+from agents.ppo_agent import PPOAgent
 import pickle
 from utils.utilities import normalize_to_range
 
@@ -61,11 +62,12 @@ class EpuckSupervisor(SupervisorCSV):
     def get_reward(self, action):
         reward = 0.0
 
-        if action[0] == 0:
-            reward += 1
-
-        # Punish collision
+        # Reward moving forward and staying close to right wall
         if self.message_received is not None:
+            if float(self.message_received[2]) > 80 and action[0] == 0:   # ps2 is the sensor on the right
+                reward += 1
+
+            # Punish collision
             for i in range(8):
                 if float(self.message_received[i]) > 1000:
                     # print('collision')

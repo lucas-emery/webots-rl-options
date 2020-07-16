@@ -9,7 +9,7 @@ import numpy as np
 
 
 class SimpleNNAgent(Agent):
-    def __init__(self, state_space: int, action_space: int, hidden=50, lr=1e-3, gamma=0.9):
+    def __init__(self, state_space: int, action_space: int, hidden=50, lr=1e-2, gamma=0.9):
         self.state_space = state_space
         self.action_space = action_space
         self.lr = lr
