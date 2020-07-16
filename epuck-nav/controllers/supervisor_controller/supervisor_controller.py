@@ -12,7 +12,7 @@ from agents.ppo_agent import PPOAgent
 import pickle
 from utils.utilities import normalize_to_range
 
-from environment import SimpleArena
+from environment import SimpleArena, Maze
 from utils.env_objects import Cylinder, Cube
 
 
@@ -22,28 +22,11 @@ class EpuckSupervisor(SupervisorCSV):
         self.observation_space = 8  # The agent has 8 inputs
         self.action_space = 3  # The agent can perform 4 actions
 
-        self.collision_dist = 0.04  # Epuck radius = 0.037
-
-        self.arena_size = np.array(self.supervisor.getFromDef('arena').getField('floorSize').getSFVec2f())
-
-        self.robot: Optional[Node] = None
-        self.environment_objects = []
+        self.environment = Maze(self.supervisor)
         self.message_received = None    # Variable to save the messages received from the robot
 
     def reset_env(self):
-
-        if self.robot is not None:
-            # Despawn existing robot
-            self.robot.remove()
-
-        for environment_object in self.environment_objects:
-            if environment_object.webot_object:
-                environment_object.webot_object.remove()
-
-        # Initialize environment
-        simple_arena_environment = SimpleArena(self.supervisor, self.robot)
-        self.environment_objects = simple_arena_environment.get_environment_objects()
-        self.robot = simple_arena_environment.get_robot()
+        self.environment.reset()
 
     def get_observations(self):
         observations = []
@@ -64,14 +47,17 @@ class EpuckSupervisor(SupervisorCSV):
 
         # Reward moving forward and staying close to right wall
         if self.message_received is not None:
-            if float(self.message_received[2]) > 80 and action[0] == 0:   # ps2 is the sensor on the right
-                reward += 1
+            if action[0] == 0:
+                reward += 0.01
+
+            if float(self.message_received[2]) > 100:      # ps2 is the sensor on the right
+                reward += 0.1
 
             # Punish collision
             for i in range(8):
                 if float(self.message_received[i]) > 1000:
                     # print('collision')
-                    return -10
+                    return -0.2
 
         return reward
 
@@ -118,8 +104,8 @@ def build_continuous_state(observation):
 supervisor = EpuckSupervisor()
 
 episode_count = 0
-episode_limit = 1000
-steps_per_episode = 500
+episode_limit = 2000
+steps_per_episode = 2000
 resume = False
 
 if not os.path.exists('pickles'):
@@ -133,8 +119,7 @@ if resume:
         version = data['version']
         print('Agent loaded. Version:', version, 'Episodes:', len(history))
 else:
-    agent = SimpleNNAgent(state_space=supervisor.observation_space, action_space=supervisor.action_space,
-                          lr=1e-2, gamma=0.9, hidden=50)
+    agent = PPOAgent(state_space=supervisor.observation_space, action_space=supervisor.action_space)
     history = []
 
 build_state = build_continuous_state

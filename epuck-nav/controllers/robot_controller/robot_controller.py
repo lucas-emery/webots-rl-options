@@ -28,17 +28,17 @@ class EpuckRobot(RobotEmitterReceiverCSV):
 
     def use_message_data(self, message):
         action = int(message[0])
-        max_vel = self.wheel_left.getMaxVelocity()
+        vel = self.wheel_left.getMaxVelocity() / 3
 
         if action == 0:     # forward
-            self.wheel_left.setVelocity(max_vel/2)
-            self.wheel_right.setVelocity(max_vel/2)
+            self.wheel_left.setVelocity(vel)
+            self.wheel_right.setVelocity(vel)
         elif action == 1:   # left
-            self.wheel_left.setVelocity(-max_vel/2)
-            self.wheel_right.setVelocity(max_vel/2)
+            self.wheel_left.setVelocity(-vel)
+            self.wheel_right.setVelocity(vel)
         elif action == 2:   # right
-            self.wheel_left.setVelocity(max_vel/2)
-            self.wheel_right.setVelocity(-max_vel/2)
+            self.wheel_left.setVelocity(vel)
+            self.wheel_right.setVelocity(-vel)
         else:
             raise Exception("Fran se la come")
 

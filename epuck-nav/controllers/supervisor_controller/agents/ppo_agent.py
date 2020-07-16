@@ -10,17 +10,17 @@ import numpy as np
 
 class PPOAgent(Agent):
     def __init__(self, state_space: int, action_space: int, a_hidden=50, c_hidden=50,
-                 a_lr=1e-3, c_lr=1e-3, gamma=0.9, clip_e=0.2):
+                 a_lr=1e-3, c_lr=3e-3, gamma=0.9, clip_e=0.2):
         self.state_space = state_space
         self.action_space = action_space
         self.gamma = gamma
         self.clip_e = clip_e
 
         self.actor = Actor(state_space, a_hidden, action_space)
-        self.actor_optim = optim.SGD(self.actor.parameters(), lr=a_lr)
+        self.actor_optim = optim.Adam(self.actor.parameters(), lr=a_lr)
 
         self.critic = Critic(state_space, c_hidden)
-        self.critic_optim = optim.SGD(self.critic.parameters(), lr=c_lr)
+        self.critic_optim = optim.Adam(self.critic.parameters(), lr=c_lr)
 
         self.states = []
         self.new_states = []
